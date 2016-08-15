@@ -1,0 +1,1 @@
+if your device is android pleaser use AMR_NB input and output for recordVedio
