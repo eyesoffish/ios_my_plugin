@@ -12,6 +12,7 @@
 		E27D1C971D615F76007416BD /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = E27D1C951D615F76007416BD /* Main.storyboard */; };
 		E27D1C991D615F76007416BD /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E27D1C981D615F76007416BD /* Assets.xcassets */; };
 		E27D1C9C1D615F76007416BD /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = E27D1C9A1D615F76007416BD /* LaunchScreen.storyboard */; };
+		E27D1CA41D6160C0007416BD /* MyTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = E27D1CA31D6160C0007416BD /* MyTableViewCell.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -22,6 +23,7 @@
 		E27D1C981D615F76007416BD /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		E27D1C9B1D615F76007416BD /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		E27D1C9D1D615F76007416BD /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		E27D1CA31D6160C0007416BD /* MyTableViewCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MyTableViewCell.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -56,6 +58,7 @@
 			children = (
 				E27D1C911D615F76007416BD /* AppDelegate.swift */,
 				E27D1C931D615F76007416BD /* ViewController.swift */,
+				E27D1CA31D6160C0007416BD /* MyTableViewCell.swift */,
 				E27D1C951D615F76007416BD /* Main.storyboard */,
 				E27D1C981D615F76007416BD /* Assets.xcassets */,
 				E27D1C9A1D615F76007416BD /* LaunchScreen.storyboard */,
@@ -137,6 +140,7 @@
 			files = (
 				E27D1C941D615F76007416BD /* ViewController.swift in Sources */,
 				E27D1C921D615F76007416BD /* AppDelegate.swift in Sources */,
+				E27D1CA41D6160C0007416BD /* MyTableViewCell.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
