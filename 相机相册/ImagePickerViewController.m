@@ -8,21 +8,27 @@
 
 #import "ImagePickerViewController.h"
 #import "BQScreenAdaptation.h"
+#import "YFKit.h"
+@import AVFoundation;
+@import Photos;
 @interface ImagePickerViewController ()<UIImagePickerControllerDelegate,UINavigationControllerDelegate>
 
 @property (nonatomic,strong) UIImagePickerController *picker;
 @property (nonatomic,strong) UIImage *image;
 @property (nonatomic,strong) UIImageView *ImageCut;
 
-@property (nonatomic,strong) UIView *contentView;//
+@property (nonatomic,strong) UIView *contentView;
 @property (nonatomic,strong) UIView *darkView;
 @property (nonatomic,strong) UIView *cancelView;
 @property (nonatomic,strong) UIView *chooseView;
+
 @property (nonatomic,strong) UIButton *btnCamrea;
 @property (nonatomic,strong) UIButton *btnAlbum;
 @property (nonatomic,strong) UIButton *btnCancel;
 
 @property (nonatomic,strong) UIViewController *MyControl;
+
+@property (nonatomic,strong) UIColor *btnColor;//按钮颜色
 @end
 
 @implementation ImagePickerViewController
@@ -32,6 +38,14 @@
     [[ImagePickerViewController shareImage] MyAlertView:control];
 }
 //////////////////////////外部调用end
+- (UIColor *)btnColor{
+    if(!_btnColor){
+        _btnColor = [UIColor redColor];
+    }
+    return _btnColor;
+}
+
+
 - (void) MyAlertView:(UIViewController *) control
 {
     [control.view addSubview:self.darkView];
@@ -51,48 +65,109 @@
     }];
     self.MyControl = control;
 }
-- (void) showPicker:(UIViewController *) control
+- (void)optimalCameraBtnPressed:(id)sender
 {
-    if([UIImagePickerController isSourceTypeAvailable:UIImagePickerControllerSourceTypePhotoLibrary])
+    if ([UIImagePickerController isSourceTypeAvailable:UIImagePickerControllerSourceTypeCamera])
     {
-        self.picker.sourceType = UIImagePickerControllerSourceTypePhotoLibrary;
-        [control presentViewController:self.picker animated:YES completion:^{
-            [self.contentView removeFromSuperview];
-        }];
-    }
-    else
-    {
-        UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"提示" message:@"设备不支持相册" preferredStyle:UIAlertControllerStyleAlert];
-        UIAlertAction *action = [UIAlertAction actionWithTitle:@"确定" style:UIAlertActionStyleCancel handler:nil];
-        [alert addAction:action];
-        [control presentViewController:alert animated:YES completion:nil];
-    }
-}
-- (void) showCamrea:(UIViewController *) control
-{
-    if([UIImagePickerController isSourceTypeAvailable:UIImagePickerControllerSourceTypeCamera])
-    {
+        // 应用第一次申请权限调用这里
+        if ([YFKit isCameraNotDetermined])
+        {
+            [AVCaptureDevice requestAccessForMediaType:AVMediaTypeVideo completionHandler:^(BOOL granted) {
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    if (granted)
+                    {
+                        // 用户授权
+                        [self presentToImagePickerController:UIImagePickerControllerSourceTypeCamera];
+                    }
+                    else
+                    {
+                        // 用户拒绝授权
+                        [self showAlertController:@"提示" message:@"授权失败"];
+                    }
+                });
+            }];
+        }
+        // 用户已经拒绝访问摄像头
+        else if ([YFKit isCameraDenied])
+        {
+            [self showAlertController:@"提示" message:@"拒绝访问摄像头，可去设置隐私里开启"];
+        }
         
-        self.picker.sourceType = UIImagePickerControllerSourceTypeCamera;
-        [control presentViewController:self.picker animated:YES completion:^{
-            [self.contentView removeFromSuperview];
-        }];
+        // 用户允许访问摄像头
+        else
+        {
+            [self presentToImagePickerController:UIImagePickerControllerSourceTypeCamera];
+        }
     }
     else
     {
-        UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"提示" message:@"设备不支持相机" preferredStyle:UIAlertControllerStyleAlert];
-        UIAlertAction *action = [UIAlertAction actionWithTitle:@"确定" style:UIAlertActionStyleCancel handler:nil];
-        [alert addAction:action];
-        [control presentViewController:alert animated:YES completion:nil];
+        // 当前设备不支持摄像头，比如模拟器
+        [self showAlertController:@"提示" message:@"当前设备不支持拍照"];
     }
 }
-- (instancetype)init
+
+- (void)optimalPhotoBtnPressed:(id)sender
 {
-    self = [super init];
-    if (self) {
-        [self myAdd];
+    if ([UIImagePickerController isSourceTypeAvailable:UIImagePickerControllerSourceTypePhotoLibrary])
+    {
+        // 第一次安装App，还未确定权限，调用这里
+        if ([YFKit isPhotoAlbumNotDetermined])
+        {
+            if ([[[UIDevice currentDevice] systemVersion] floatValue] >= 8.0)
+            {
+                // 该API从iOS8.0开始支持
+                // 系统弹出授权对话框
+                [PHPhotoLibrary requestAuthorization:^(PHAuthorizationStatus status) {
+                    dispatch_async(dispatch_get_main_queue(), ^{
+                        if (status == PHAuthorizationStatusRestricted || status == PHAuthorizationStatusDenied)
+                        {
+                            // 用户拒绝授权
+                            [self showAlertController:@"提示" message:@"授权失败"];
+                        }
+                        else if (status == PHAuthorizationStatusAuthorized)
+                        {
+                            // 用户授权，弹出相册对话框
+                            [self presentToImagePickerController:UIImagePickerControllerSourceTypePhotoLibrary];
+                        }
+                    });
+                }];
+            }
+            else
+            {
+                // 以上requestAuthorization接口只支持8.0以上，如果App支持7.0及以下，就只能调用这里。
+                NSLog(@"// 以上requestAuthorization接口只支持8.0以上，如果App支持7.0及以下，就只能调用这里。");
+                [self presentToImagePickerController:UIImagePickerControllerSourceTypePhotoLibrary];
+            }
+        }
+        else if ([YFKit isPhotoAlbumDenied])
+        {
+            // 如果已经拒绝，则弹出对话框
+            [self showAlertController:@"提示" message:@"拒绝访问相册，可去设置隐私里开启"];
+        }
+        else
+        {
+            // 已经授权，跳转到相册页面
+            [self presentToImagePickerController:UIImagePickerControllerSourceTypePhotoLibrary];
+        }
     }
-    return self;
+    else
+    {
+        // 当前设备不支持打开相册
+        [self showAlertController:@"提示" message:@"当前设备不支持相册"];
+    }
+}
+- (void)showAlertController:(NSString *)title message:(NSString *)message
+{
+    UIAlertController *ac = [UIAlertController alertControllerWithTitle:title message:message preferredStyle:UIAlertControllerStyleAlert];
+    [ac addAction:[UIAlertAction actionWithTitle:@"我知道了" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+        
+    }]];
+    [self.MyControl presentViewController:ac animated:YES completion:nil];
+}
+- (void)presentToImagePickerController:(UIImagePickerControllerSourceType)type
+{
+    self.picker.sourceType = type;
+    [self.MyControl presentViewController:self.picker animated:YES completion:nil];
 }
 - (void)imagePickerControllerDidCancel:(UIImagePickerController *)picker
 {
@@ -111,12 +186,6 @@
         [self.darkView removeFromSuperview];
         self.contentView.frame = CGRectMake(0, 200, SCREEN_WIDTH, SCREEN_HEIGHT);
     }];
-}
-- (void) myAdd
-{
-    self.picker = [[UIImagePickerController alloc]init];
-    self.picker.delegate = self;
-    self.picker.allowsEditing = YES;
 }
 + (ImagePickerViewController *) shareImage
 {
@@ -137,15 +206,15 @@
         [self.contentView removeFromSuperview];
     }];
 }
-- (void) btnAlbumClick  //相册
-{
-    [self showPicker:self.MyControl];
-}
-- (void) btnCamreaClick //相机
-{
-    [self showCamrea:self.MyControl];
-}
 #pragma  mark -- getter
+- (UIImagePickerController *)picker{
+    if(!_picker){
+        _picker = [[UIImagePickerController alloc]init];
+        _picker.delegate = self;
+        _picker.allowsEditing = YES;
+    }
+    return _picker;
+}
 - (UIView *)contentView
 {
     if(!_contentView)
@@ -170,7 +239,7 @@
 {
     if(!_cancelView)
     {
-        _cancelView = [[UIView alloc]initWithFrame:BQAdaptationFrame(10,IPHONE_HEIGHT+70,IPHONE_WIDTH-20,80)];
+        _cancelView = [[UIView alloc]initWithFrame:BQAdaptationFrame(15,IPHONE_HEIGHT+60,IPHONE_WIDTH-30,80)];
         _cancelView.backgroundColor = [UIColor whiteColor];
         _cancelView.layer.cornerRadius = 10;
     }
@@ -180,9 +249,9 @@
 {
     if(!_chooseView)
     {
-        _chooseView = [[UIView alloc]initWithFrame:BQAdaptationFrame(10, IPHONE_HEIGHT-90, IPHONE_WIDTH-20, 150)];
+        _chooseView = [[UIView alloc]initWithFrame:BQAdaptationFrame(15, IPHONE_HEIGHT-120, IPHONE_WIDTH-30, 150)];
         _chooseView.backgroundColor = [UIColor whiteColor];
-        _chooseView.layer.cornerRadius = 10;
+        _chooseView.layer.cornerRadius = 8;
     }
     return _chooseView;
 }
@@ -192,10 +261,10 @@
     {
         _btnAlbum = [UIButton buttonWithType:UIButtonTypeCustom];
         [_btnAlbum setTitle:@"从相册选择" forState:UIControlStateNormal];
-        [_btnAlbum setTitleColor:[UIColor blueColor] forState:UIControlStateNormal];
-        _btnAlbum.bounds = BQAdaptationFrame(0, 0, IPHONE_WIDTH-20, 50);
+        [_btnAlbum setTitleColor:self.btnColor forState:UIControlStateNormal];
+        _btnAlbum.bounds = BQAdaptationFrame(0, 0, IPHONE_WIDTH-30, 60);
         _btnAlbum.center = BQadaptationCenter(CGPointMake(IPHONE_WIDTH/2, CGRectGetMaxY(self.chooseView.frame)/BQAdaptationWidth()-40));
-        [_btnAlbum addTarget:self action:@selector(btnAlbumClick) forControlEvents:UIControlEventTouchUpInside];
+        [_btnAlbum addTarget:self action:@selector(optimalPhotoBtnPressed:) forControlEvents:UIControlEventTouchUpInside];
     }
     return _btnAlbum;
 }
@@ -204,11 +273,11 @@
     if(!_btnCamrea)
     {
         _btnCamrea = [UIButton buttonWithType:UIButtonTypeCustom];
-        [_btnCamrea setTitleColor:[UIColor blueColor] forState:UIControlStateNormal];
+        [_btnCamrea setTitleColor:self.btnColor forState:UIControlStateNormal];
         [_btnCamrea setTitle:@"相机" forState:UIControlStateNormal];
-        _btnCamrea.bounds = BQAdaptationFrame(0, 0, IPHONE_WIDTH-20, 50);
+        _btnCamrea.bounds = BQAdaptationFrame(0, 0, IPHONE_WIDTH-30, 60);
         _btnCamrea.center = BQadaptationCenter(CGPointMake(IPHONE_WIDTH/2, CGRectGetMinY(self.chooseView.frame)/BQAdaptationWidth()+40));
-        [_btnCamrea addTarget:self action:@selector(btnCamreaClick) forControlEvents:UIControlEventTouchUpInside];
+        [_btnCamrea addTarget:self action:@selector(optimalCameraBtnPressed:) forControlEvents:UIControlEventTouchUpInside];
     }
     return _btnCamrea;
 }
@@ -220,7 +289,7 @@
         [_btnCancel setTitle:@"取消" forState:UIControlStateNormal];
         _btnCancel.bounds = BQAdaptationFrame(0, 0, IPHONE_WIDTH-20, 50);
         _btnCancel.center = self.cancelView.center;
-        [_btnCancel setTitleColor:[UIColor blueColor] forState:UIControlStateNormal];
+        [_btnCancel setTitleColor:self.btnColor forState:UIControlStateNormal];
         [_btnCancel addTarget:self action:@selector(tapClick) forControlEvents:UIControlEventTouchUpInside];
     }
     return _btnCancel;
