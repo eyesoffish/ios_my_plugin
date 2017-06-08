@@ -9,6 +9,7 @@
 #import "ImagePickerViewController.h"
 #import "BQScreenAdaptation.h"
 #import "YFKit.h"
+#import "Tool.h"
 @import AVFoundation;
 @import Photos;
 @interface ImagePickerViewController ()<UIImagePickerControllerDelegate,UINavigationControllerDelegate>
@@ -22,8 +23,7 @@
 @property (nonatomic,strong) UIView *cancelView;
 @property (nonatomic,strong) UIView *chooseView;
 
-@property (nonatomic,strong) UIButton *btnCamrea;
-@property (nonatomic,strong) UIButton *btnAlbum;
+
 @property (nonatomic,strong) UIButton *btnCancel;
 
 @property (nonatomic,strong) UIViewController *MyControl;
@@ -35,18 +35,18 @@
 //////////////////////////外部调用Begin
 + (void) alertView:(UIViewController *) control
 {
-    [[ImagePickerViewController shareImage] MyAlertView:control];
+    [[ImagePickerViewController shareImage] myAlertView:control];
 }
 //////////////////////////外部调用end
 - (UIColor *)btnColor{
     if(!_btnColor){
-        _btnColor = [UIColor redColor];
+        _btnColor = MainRedColor;
     }
     return _btnColor;
 }
 
 
-- (void) MyAlertView:(UIViewController *) control
+- (void) myAlertView:(UIViewController *) control
 {
     [control.view addSubview:self.darkView];
     [self.contentView addSubview:self.chooseView];
@@ -135,7 +135,7 @@
             else
             {
                 // 以上requestAuthorization接口只支持8.0以上，如果App支持7.0及以下，就只能调用这里。
-                NSLog(@"// 以上requestAuthorization接口只支持8.0以上，如果App支持7.0及以下，就只能调用这里。");
+//                NSLog(@"// 以上requestAuthorization接口只支持8.0以上，如果App支持7.0及以下，就只能调用这里。");
                 [self presentToImagePickerController:UIImagePickerControllerSourceTypePhotoLibrary];
             }
         }
@@ -173,6 +173,7 @@
 {
     [picker dismissViewControllerAnimated:YES completion:nil];
     [self.darkView removeFromSuperview];
+    [self.contentView removeFromSuperview];
     self.contentView.frame = CGRectMake(0, 200, SCREEN_WIDTH, SCREEN_HEIGHT);
 }
 - (void)imagePickerController:(UIImagePickerController *)picker didFinishPickingMediaWithInfo:(NSDictionary<NSString *,id> *)info
@@ -196,6 +197,10 @@
     });
     return instance;
 }
+- (void) btnAlbumClick{
+    [self tapClick];
+    self.btnheadImageClick();
+}
 #pragma mark gesture
 - (void) tapClick
 {
@@ -212,6 +217,7 @@
         _picker = [[UIImagePickerController alloc]init];
         _picker.delegate = self;
         _picker.allowsEditing = YES;
+        _picker.navigationBar.tintColor = MainRedColor;
     }
     return _picker;
 }
@@ -260,11 +266,11 @@
     if(!_btnAlbum)
     {
         _btnAlbum = [UIButton buttonWithType:UIButtonTypeCustom];
-        [_btnAlbum setTitle:@"从相册选择" forState:UIControlStateNormal];
+        [_btnAlbum setTitle:@"查看图片" forState:UIControlStateNormal];
         [_btnAlbum setTitleColor:self.btnColor forState:UIControlStateNormal];
         _btnAlbum.bounds = BQAdaptationFrame(0, 0, IPHONE_WIDTH-30, 60);
         _btnAlbum.center = BQadaptationCenter(CGPointMake(IPHONE_WIDTH/2, CGRectGetMaxY(self.chooseView.frame)/BQAdaptationWidth()-40));
-        [_btnAlbum addTarget:self action:@selector(optimalPhotoBtnPressed:) forControlEvents:UIControlEventTouchUpInside];
+        [_btnAlbum addTarget:self action:@selector(btnAlbumClick) forControlEvents:UIControlEventTouchUpInside];
     }
     return _btnAlbum;
 }
@@ -274,10 +280,10 @@
     {
         _btnCamrea = [UIButton buttonWithType:UIButtonTypeCustom];
         [_btnCamrea setTitleColor:self.btnColor forState:UIControlStateNormal];
-        [_btnCamrea setTitle:@"相机" forState:UIControlStateNormal];
+        [_btnCamrea setTitle:@"更改头像" forState:UIControlStateNormal];
         _btnCamrea.bounds = BQAdaptationFrame(0, 0, IPHONE_WIDTH-30, 60);
         _btnCamrea.center = BQadaptationCenter(CGPointMake(IPHONE_WIDTH/2, CGRectGetMinY(self.chooseView.frame)/BQAdaptationWidth()+40));
-        [_btnCamrea addTarget:self action:@selector(optimalCameraBtnPressed:) forControlEvents:UIControlEventTouchUpInside];
+        [_btnCamrea addTarget:self action:@selector(optimalPhotoBtnPressed:) forControlEvents:UIControlEventTouchUpInside];
     }
     return _btnCamrea;
 }
