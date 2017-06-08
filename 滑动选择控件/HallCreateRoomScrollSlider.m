@@ -6,17 +6,17 @@
 //  Copyright © 2016年 fengei. All rights reserved.
 //
 
-#import "CNScrollSlider.h"
+#import "HallCreateRoomScrollSlider.h"
 #import "BQScreenAdaptation.h"
 #import "UIView+ZLFrame.h"
 #import "Tool.h"
-@interface CNScrollSlider ()
+@interface HallCreateRoomScrollSlider ()
 
 @property (nonatomic,strong) UIView *lineVeiw;//背景线
 @property (nonatomic,strong) UIView *lineBackView;
-@property (nonatomic,strong) NSMutableArray *arrayImage;
+
 @end
-@implementation CNScrollSlider
+@implementation HallCreateRoomScrollSlider
 
 - (instancetype)initWithFrame:(CGRect)frame{
     self = [super initWithFrame:frame];
@@ -29,41 +29,59 @@
 - (void) setupUI{
     [self addSubview:self.lineBackView];
     [self addSubview:self.lineVeiw];
-    CGFloat margin = (self.zlWidth - 55) / 4.0;
-    NSArray *array = @[@"1小时",@"2小时",@"3小时",@"4小时"];
-    for(int i=0;i<5;i++){
+    
+}
+- (void)setArrayTime:(NSArray *)arrayTime{
+    _arrayTime = arrayTime;
+    CGFloat margin = (self.zlWidth - 60.0) / (self.arrayTime.count - 1);
+    CGFloat labeFont = 20;
+    CGFloat imageW = 35;
+    CGFloat marginY = 40;
+    CGFloat labelW = 80;
+    if(arrayTime.count > 5){
+        labeFont = 25;
+        imageW = 40;
+        marginY = 60;
+        labelW = 100;
+    }
+    for(int i=0;i<arrayTime.count;i++){
         CGFloat x = 10+margin*i;
-        UIImageView *image = [[UIImageView alloc]initWithFrame:BQAdaptationFrame(x, self.zlHeight / 2.0 - 17.5, 35, 35)];
-        image.image = [UIImage imageNamed:@"未选中点"];
+        UIImageView *image = [[UIImageView alloc]initWithFrame:BQAdaptationFrame(x, self.zlHeight / 2.0 - imageW/2.0, imageW, imageW)];
+        if(i==0){
+            image.image = [UIImage imageNamed:@"选中点"];
+        }else{
+            image.image = [UIImage imageNamed:@"未选中点"];
+        }
         [self addSubview:image];
         [self.arrayImage addObject:image];
         if(i>0){
             //添加时间
-            UILabel *label = [[UILabel alloc]initWithFrame:BQAdaptationFrame(0, 0, 60, 30)];
-            label.center = CGPointMake(image.center.x, image.center.y - 40*BQAdaptationWidth());
-            label.text = array[i-1];
+            UILabel *label = [[UILabel alloc]initWithFrame:BQAdaptationFrame(0, 0, labelW, 30)];
+            label.center = CGPointMake(image.center.x, image.center.y - marginY*BQAdaptationWidth());
+            label.text = arrayTime[i];
             label.textAlignment = NSTextAlignmentCenter;
-            label.font = [UIFont systemFontOfSize:20*BQAdaptationWidth()];
+            label.font = [UIFont systemFontOfSize:labeFont*BQAdaptationWidth()];
             [self addSubview:label];
         }else{
-            UILabel *label = [[UILabel alloc]initWithFrame:BQAdaptationFrame(0, 0, 80, 30)];
-            label.center = CGPointMake(image.center.x+10*BQAdaptationWidth(), image.center.y + 40*BQAdaptationWidth());
+            UILabel *label = [[UILabel alloc]initWithFrame:BQAdaptationFrame(0, 0, labelW, 30)];
+            label.center = CGPointMake(image.center.x+10*BQAdaptationWidth(), image.center.y + marginY*BQAdaptationWidth());
             label.text = @"30分钟";
             label.textAlignment = NSTextAlignmentCenter;
-            label.font = [UIFont systemFontOfSize:20*BQAdaptationWidth()];
+            label.font = [UIFont systemFontOfSize:labeFont*BQAdaptationWidth()];
+            
             [self addSubview:label];
         }
     }
-    
 }
 - (void)touchesMoved:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event{
     //获取点击事件
     UITouch *touch = [touches anyObject];
     //获取点击坐标
     CGPoint point = [touch locationInView:self];
-    NSLog(@"%lf,%lf",point.x,point.y);
+    CGFloat width = self.zlWidth+200;//移动线条的宽度
     CGRect frame = self.lineVeiw.frame;
-    frame.origin.x = (-self.zlWidth + point.x*1.5)*BQAdaptationWidth();
+//    frame.origin.x = (-self.zlWidth + point.x*1.5)*BQAdaptationWidth();
+    frame.origin.x = -(width * BQAdaptationWidth()) + point.x+10*BQAdaptationWidth();
     self.lineVeiw.frame = frame;
     [self arrarSetImage:point.x];
 }
@@ -73,7 +91,9 @@
         if(x >= obj.frame.origin.x){
             obj.image = [UIImage imageNamed:@"选中点"];
         }else{
-            obj.image = [UIImage imageNamed:@"未选中点"];
+            if(idx > 0){
+                obj.image = [UIImage imageNamed:@"未选中点"];
+            }
         }
     }];
 }
@@ -95,7 +115,8 @@
 }
 -  (UIView *)lineVeiw{
     if(!_lineVeiw){
-        _lineVeiw = [[UIView alloc]initWithFrame:BQAdaptationFrame(-self.zlWidth-50, self.lineBackView.zlMinY, self.zlWidth+50, 20)];
+        CGFloat width = self.zlWidth+200;
+        _lineVeiw = [[UIView alloc]initWithFrame:BQAdaptationFrame(-width, self.lineBackView.zlMinY, width, 20)];
         _lineVeiw.backgroundColor = MY_COLOR(203, 171, 247, 1.0);
         _lineVeiw.layer.cornerRadius = 10*BQAdaptationWidth();
     }
