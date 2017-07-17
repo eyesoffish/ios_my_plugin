@@ -7,9 +7,8 @@
 //
 
 #import "ImagePickerViewController.h"
-#import "BQScreenAdaptation.h"
 #import "YFKit.h"
-#import "Tool.h"
+#import "FaceAlertTool.h"
 @import AVFoundation;
 @import Photos;
 @interface ImagePickerViewController ()<UIImagePickerControllerDelegate,UINavigationControllerDelegate>
@@ -17,53 +16,25 @@
 @property (nonatomic,strong) UIImagePickerController *picker;
 @property (nonatomic,strong) UIImage *image;
 @property (nonatomic,strong) UIImageView *ImageCut;
-
-@property (nonatomic,strong) UIView *contentView;
-@property (nonatomic,strong) UIView *darkView;
-@property (nonatomic,strong) UIView *cancelView;
-@property (nonatomic,strong) UIView *chooseView;
-
-
-@property (nonatomic,strong) UIButton *btnCancel;
-
+//
 @property (nonatomic,strong) UIViewController *MyControl;
-
-@property (nonatomic,strong) UIColor *btnColor;//按钮颜色
 @end
 
 @implementation ImagePickerViewController
-//////////////////////////外部调用Begin
-+ (void) alertView:(UIViewController *) control
-{
-    [[ImagePickerViewController shareImage] myAlertView:control];
-}
-//////////////////////////外部调用end
-- (UIColor *)btnColor{
-    if(!_btnColor){
-        _btnColor = MainRedColor;
-    }
-    return _btnColor;
-}
-
-
-- (void) myAlertView:(UIViewController *) control
-{
-    [control.view addSubview:self.darkView];
-    [self.contentView addSubview:self.chooseView];
-    [self.contentView addSubview:self.cancelView];
-    [self.contentView addSubview:self.btnCancel];
-    [self.contentView addSubview:self.btnCamrea];
-    [self.contentView addSubview:self.btnAlbum];
-    UIView *line = [[UIView alloc]initWithFrame:BQAdaptationFrame(10, CGRectGetMaxY(self.chooseView.frame)/BQAdaptationWidth()-70, IPHONE_WIDTH-20, 1)];
-    line.backgroundColor = [UIColor grayColor];
-    [self.contentView addSubview:line];
-    [control.view addSubview:self.contentView];
-    [UIView animateWithDuration:0.5 animations:^{
-        self.contentView.frame = [UIScreen mainScreen].bounds;
-    } completion:^(BOOL finished) {
-        
-    }];
+- (void) alertView:(UIViewController *)control arraytitle:(NSArray *)arr{
     self.MyControl = control;
+    [FaceAlertTool createSheetAlertWithTitle:nil MessageArray:arr inViewController:control titleColor:MainRedColor SheetAction:^(NSInteger index) {
+        switch (index) {
+            case 0:
+                [self optimalPhotoBtnPressed:control];
+                break;
+            case 1:
+                if(self.btnheadImageClick) self.btnheadImageClick();
+                break;
+            default:
+                break;
+        }
+    }];
 }
 - (void)optimalCameraBtnPressed:(id)sender
 {
@@ -172,9 +143,6 @@
 - (void)imagePickerControllerDidCancel:(UIImagePickerController *)picker
 {
     [picker dismissViewControllerAnimated:YES completion:nil];
-    [self.darkView removeFromSuperview];
-    [self.contentView removeFromSuperview];
-    self.contentView.frame = CGRectMake(0, 200, SCREEN_WIDTH, SCREEN_HEIGHT);
 }
 - (void)imagePickerController:(UIImagePickerController *)picker didFinishPickingMediaWithInfo:(NSDictionary<NSString *,id> *)info
 {
@@ -184,8 +152,6 @@
         {
             self.back(self.image);
         }
-        [self.darkView removeFromSuperview];
-        self.contentView.frame = CGRectMake(0, 200, SCREEN_WIDTH, SCREEN_HEIGHT);
     }];
 }
 + (ImagePickerViewController *) shareImage
@@ -197,20 +163,7 @@
     });
     return instance;
 }
-- (void) btnAlbumClick{
-    [self tapClick];
-    self.btnheadImageClick();
-}
 #pragma mark gesture
-- (void) tapClick
-{
-    [UIView animateWithDuration:0.5 animations:^{
-        self.contentView.frame = CGRectMake(0, 200, SCREEN_WIDTH, SCREEN_HEIGHT);
-    } completion:^(BOOL finished) {
-        [self.darkView removeFromSuperview];
-        [self.contentView removeFromSuperview];
-    }];
-}
 #pragma  mark -- getter
 - (UIImagePickerController *)picker{
     if(!_picker){
@@ -220,84 +173,5 @@
         _picker.navigationBar.tintColor = MainRedColor;
     }
     return _picker;
-}
-- (UIView *)contentView
-{
-    if(!_contentView)
-    {
-        _contentView = [[UIView alloc]initWithFrame:CGRectMake(0, 200, SCREEN_WIDTH, SCREEN_HEIGHT)];
-        _contentView.backgroundColor = [UIColor clearColor];
-        UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc]initWithTarget:self action:@selector(tapClick)];
-        [_contentView addGestureRecognizer:tap];
-    }
-    return _contentView;
-}
-- (UIView *)darkView
-{
-    if(!_darkView)
-    {
-        _darkView = [[UIView alloc]initWithFrame:[UIScreen mainScreen].bounds];
-        _darkView.backgroundColor = [UIColor colorWithRed:0 green:0 blue:0 alpha:0.5];
-    }
-    return _darkView;
-}
-- (UIView *)cancelView
-{
-    if(!_cancelView)
-    {
-        _cancelView = [[UIView alloc]initWithFrame:BQAdaptationFrame(15,IPHONE_HEIGHT+60,IPHONE_WIDTH-30,80)];
-        _cancelView.backgroundColor = [UIColor whiteColor];
-        _cancelView.layer.cornerRadius = 10;
-    }
-    return _cancelView;
-}
-- (UIView *)chooseView
-{
-    if(!_chooseView)
-    {
-        _chooseView = [[UIView alloc]initWithFrame:BQAdaptationFrame(15, IPHONE_HEIGHT-120, IPHONE_WIDTH-30, 150)];
-        _chooseView.backgroundColor = [UIColor whiteColor];
-        _chooseView.layer.cornerRadius = 8;
-    }
-    return _chooseView;
-}
-- (UIButton *)btnAlbum
-{
-    if(!_btnAlbum)
-    {
-        _btnAlbum = [UIButton buttonWithType:UIButtonTypeCustom];
-        [_btnAlbum setTitle:@"查看图片" forState:UIControlStateNormal];
-        [_btnAlbum setTitleColor:self.btnColor forState:UIControlStateNormal];
-        _btnAlbum.bounds = BQAdaptationFrame(0, 0, IPHONE_WIDTH-30, 60);
-        _btnAlbum.center = BQadaptationCenter(CGPointMake(IPHONE_WIDTH/2, CGRectGetMaxY(self.chooseView.frame)/BQAdaptationWidth()-40));
-        [_btnAlbum addTarget:self action:@selector(btnAlbumClick) forControlEvents:UIControlEventTouchUpInside];
-    }
-    return _btnAlbum;
-}
-- (UIButton *)btnCamrea
-{
-    if(!_btnCamrea)
-    {
-        _btnCamrea = [UIButton buttonWithType:UIButtonTypeCustom];
-        [_btnCamrea setTitleColor:self.btnColor forState:UIControlStateNormal];
-        [_btnCamrea setTitle:@"更改头像" forState:UIControlStateNormal];
-        _btnCamrea.bounds = BQAdaptationFrame(0, 0, IPHONE_WIDTH-30, 60);
-        _btnCamrea.center = BQadaptationCenter(CGPointMake(IPHONE_WIDTH/2, CGRectGetMinY(self.chooseView.frame)/BQAdaptationWidth()+40));
-        [_btnCamrea addTarget:self action:@selector(optimalPhotoBtnPressed:) forControlEvents:UIControlEventTouchUpInside];
-    }
-    return _btnCamrea;
-}
-- (UIButton *)btnCancel
-{
-    if(!_btnCancel)
-    {
-        _btnCancel = [UIButton buttonWithType:UIButtonTypeCustom];
-        [_btnCancel setTitle:@"取消" forState:UIControlStateNormal];
-        _btnCancel.bounds = BQAdaptationFrame(0, 0, IPHONE_WIDTH-20, 50);
-        _btnCancel.center = self.cancelView.center;
-        [_btnCancel setTitleColor:self.btnColor forState:UIControlStateNormal];
-        [_btnCancel addTarget:self action:@selector(tapClick) forControlEvents:UIControlEventTouchUpInside];
-    }
-    return _btnCancel;
 }
 @end

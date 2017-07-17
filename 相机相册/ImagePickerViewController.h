@@ -14,14 +14,8 @@
 typedef void (^callBack)(UIImage *);
 typedef void (^btnheadImageClick)();
 @interface ImagePickerViewController : UIViewController
-//弹出层的按钮可设置按钮属性
-
-
-//
-+ (void) alertView:(UIViewController *) control;
 + (ImagePickerViewController *) shareImage;//获取相机实列
 @property (nonatomic,copy) callBack back;//返回照片
 @property (nonatomic,copy) btnheadImageClick btnheadImageClick;
-@property (nonatomic,strong) UIButton *btnCamrea;//相机
-@property (nonatomic,strong) UIButton *btnAlbum;//相册
+- (void) alertView:(UIViewController *)control arraytitle:(NSArray *)arr;
 @end
